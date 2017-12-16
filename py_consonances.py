@@ -62,12 +62,12 @@ chordNames=['$C_M$','$C\sharp_M$','$D_M$','$Eb_M$','$E_M$','$F_M$',
 tuning_names=[]
 
 with open("./96_tunings.txt","r") as f:
-    num_tunings = int(f.readline())
+    num_tunings = int(f.readline().rstrip())
     tunings = np.zeros((num_tunings,12))
     for i in range(num_tunings):
         tuning_names.append(f.readline())
         tunings[i,:] = [float(x) for x in f.readline().rstrip().split(",")]
-
+tuning_names = [x.replace("\r\n","") for x in tuning_names]
 ## Consonance table calculations
 
 consonance_table = np.zeros((tunings.shape[0],24))
@@ -111,7 +111,7 @@ for tuning_idx,tuning in enumerate(tunings):
                                   tuning_frequencies[index+7]])
         for i in range(1,6):
             spectrum[:,i] = float(i+1)*spectrum[:,0]
-        spectrum = 260.*spectrum/spectrum[0,0]
+        spectrum = base_frequency*spectrum/spectrum[0,0]
         spectrum_c = plomp_spectrum(spectrum)
         consonance_table[tuning_idx,index] = spectrum_c-puremajor_c
 
@@ -121,22 +121,28 @@ for tuning_idx,tuning in enumerate(tunings):
                                   tuning_frequencies[index+7]])
         for i in range(1,6):
             spectrum[:,i] = float(i+1)*spectrum[:,0]
-        spectrum = 260.*spectrum/spectrum[0,0]
+        spectrum = base_frequency*spectrum/spectrum[0,0]
         spectrum_c = plomp_spectrum(spectrum)
         consonance_table[tuning_idx,index+12] = spectrum_c-pureminor_c
 
+rel_consonance_table = consonance_table-np.tile(consonance_table[0,:],(num_tunings,1))
+
 ## We display the consonance table in a heatmap
-plt.imshow(consonance_table,cmap="magma")
-plt.colorbar()
+plt.figure(figsize=(5,10))
+plt.imshow(consonance_table,cmap="magma",aspect="auto")
 plt.yticks(range(num_tunings),tuning_names,fontsize=6)
-plt.xticks(range(24),chordNames,fontsize=6)
-plt.show()
+plt.xticks(range(24),chordNames,fontsize=5)
+plt.colorbar()
+plt.savefig("./consonance_table.jpg",dpi=300,bbox_inches='tight')
+plt.close()
 
 ## We can also display the deviations relative to the equal temperament
 ## which is the first tuning in the tuning array
-plt.imshow(consonance_table-np.tile(consonance_table[0,:],(num_tunings,1)),cmap="RdYlGn_r")
-plt.clim([-0.5,0.5])
-plt.colorbar()
+plt.figure(figsize=(5,10))
+plt.imshow(rel_consonance_table,cmap="RdYlGn_r",aspect="auto")
+plt.clim([-0.4,0.4])
 plt.yticks(range(num_tunings),tuning_names,fontsize=6)
-plt.xticks(range(24),chordNames,fontsize=6)
-plt.show()
+plt.xticks(range(24),chordNames,fontsize=5)
+plt.colorbar()
+plt.savefig("./consonance_table_bis.jpg",dpi=300,bbox_inches='tight')
+plt.close()
